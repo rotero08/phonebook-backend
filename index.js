@@ -40,10 +40,6 @@ let persons = [
   },
 ];
 
-app.get("/", (request, response) => {
-  response.send("<h1>Hello World!</h1>");
-});
-
 app.get("/info", (request, response) => {
   const timestamp = new Date();
   response.send(
