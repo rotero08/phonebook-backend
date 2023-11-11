@@ -38,24 +38,16 @@ app.get("/api/persons", (request, response) => {
   });
 });
 
-app.get("/api/persons/:id", (request, response) => {
+app.get("/api/persons/:id", (request, response, next) => {
   const id = request.params.id;
   Person.findById(id)
     .then((person) => {
       if (!person) {
-        return response.status(404).send({ error: "Person not found" });
+        response.status(404).end();
       }
       response.json(person);
     })
-    .catch((error) => {
-      if (error.name === "CastError" && error.kind === "ObjectId") {
-        console.error(error);
-        response.status(404).send({ error: "Person not found" });
-      } else {
-        console.error(error);
-        response.status(500).send({ error: "Internal Server Error" });
-      }
-    });
+    .catch((error) => next(error));
 });
 
 app.delete("/api/persons/:id", (request, response) => {
@@ -64,11 +56,6 @@ app.delete("/api/persons/:id", (request, response) => {
 
   response.status(204).end();
 });
-
-const generateId = () => {
-  const maxId = persons.length > 0 ? Math.max(...persons.map((n) => n.id)) : 0;
-  return maxId + 1;
-};
 
 app.post("/api/persons", (request, response) => {
   const body = request.body;
@@ -89,10 +76,33 @@ app.post("/api/persons", (request, response) => {
     });
   }
 
-  Person.save().then((savedPerson) => {
+  const person = new Person({
+    name: body.name,
+    number: body.number,
+  });
+
+  person.save().then((savedPerson) => {
     response.json(savedPerson);
   });
 });
+
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: "unknown endpoint" });
+};
+
+app.use(unknownEndpoint);
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
