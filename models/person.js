@@ -15,9 +15,19 @@ mongoose
     console.log("error connecting to MongoDB:", error.message);
   });
 
+function validator(val) {
+  const regex = /^\d{2,3}-\d+$/;
+  return regex.test(val);
+}
+
 const personSchema = new mongoose.Schema({
   name: { type: String, minLength: 3, required: true },
-  number: { type: String, required: true },
+  number: {
+    type: String,
+    minLength: 8,
+    validate: validator,
+    required: true,
+  },
 });
 
 personSchema.set("toJSON", {
