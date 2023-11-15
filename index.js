@@ -64,9 +64,24 @@ app.delete("/api/persons/:id", (request, response, next) => {
 
 app.put("/api/persons/:id", (request, response, next) => {
   const id = request.params.id;
-  Person.findByIdAndUpdate(id)
-    .then((person) => {
-      if (!person) {
+  const body = request.body;
+  console.log(id);
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  if (!body.name || !body.number) {
+    console.log(body.name, body.number);
+    return response.status(400).json({
+      error: "name or number missing",
+    });
+  }
+
+  Person.findByIdAndUpdate(id, person, { new: true })
+    .then((updatedPerson) => {
+      if (!updatedPerson) {
         response.status(404).end();
       }
       response.json(person);
@@ -77,19 +92,9 @@ app.put("/api/persons/:id", (request, response, next) => {
 app.post("/api/persons", (request, response) => {
   const body = request.body;
 
-  const isDuplicate = persons.some(
-    (person) => JSON.stringify(person.name) === JSON.stringify(body.name)
-  );
-
   if (!body.name || !body.number) {
     return response.status(400).json({
       error: "name or number missing",
-    });
-  }
-
-  if (isDuplicate) {
-    return response.status(400).json({
-      error: "name must be unique",
     });
   }
 
